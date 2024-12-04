@@ -1,4 +1,4 @@
-use dialoguer::{theme::ColorfulTheme, Input, Select};
+use dialoguer::{theme::ColorfulTheme, Select};
 use dotenv::dotenv;
 use figlet_rs::FIGfont;
 use megaverse::MegaverseApiClient;
@@ -41,8 +41,8 @@ async fn main() {
             .unwrap();
 
         match selection {
-            0 => todo!("Do a 🪐POLYanet cross"),
-            1 => todo!("Reset Megaverse"),
+            0 => client.create_polyanet_cross().await.unwrap(),
+            1 => client.reset_megaverse().await.unwrap(),
             2 => {
                 println!("Exiting...");
                 break; // Exit the loop if "Exit" is selected
