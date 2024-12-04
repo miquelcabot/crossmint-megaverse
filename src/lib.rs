@@ -1,6 +1,7 @@
 use reqwest::Client;
 use serde_json::json;
 use serde_json::Value; // For parsing dynamic JSON
+use tokio::time::{sleep, Duration};
 
 const API_URL: &str = "https://challenge.crossmint.com/api";
 const MEGAVERSE_SIZE: u32 = 11;
@@ -96,58 +97,88 @@ impl MegaverseApiClient {
     }
 
     /// Create a Polyanet at the specified row and column
-    async fn create_polyanet(
+    pub async fn create_polyanet(
         &self,
         row: u32,
         column: u32,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let url = format!("{}/polyanets", API_URL);
-        let payload = json!({
-            "row": row,
-            "column": column,
-            "candidateId": self.candidate_id
-        });
+        loop {
+            let url = format!("{}/polyanets", API_URL);
+            let payload = json!({
+                "row": row,
+                "column": column,
+                "candidateId": self.candidate_id
+            });
 
-        let response = self.client.post(&url).json(&payload).send().await?;
+            let response = self.client.post(&url).json(&payload).send().await;
 
-        if response.status().is_success() {
-            println!("Successfully created Polyanet at ({}, {})", row, column);
-        } else {
-            eprintln!(
-                "Failed to create Polyanet at ({}, {}): {}",
-                row,
-                column,
-                response.text().await?
-            );
+            match response {
+                Ok(resp) if resp.status().is_success() => {
+                    println!("Successfully created Polyanet at ({}, {})", row, column);
+                    return Ok(());
+                }
+                Ok(resp) => {
+                    let error_message = resp
+                        .text()
+                        .await
+                        .unwrap_or_else(|_| "Unknown error".to_string());
+                    eprintln!(
+                        "Failed to create Polyanet at ({}, {}): {}. Retrying...",
+                        row, column, error_message
+                    );
+                }
+                Err(e) => {
+                    eprintln!(
+                        "Error creating Polyanet at ({}, {}): {}. Retrying...",
+                        row, column, e
+                    );
+                }
+            }
+
+            sleep(Duration::from_secs(1)).await; // Wait before retrying
         }
-        Ok(())
     }
 
     /// Delete a Polyanet at the specified row and column
-    async fn delete_polyanet(
+    pub async fn delete_polyanet(
         &self,
         row: u32,
         column: u32,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let url = format!("{}/polyanets", API_URL);
-        let payload = json!({
-            "row": row,
-            "column": column,
-            "candidateId": self.candidate_id
-        });
+        loop {
+            let url = format!("{}/polyanets", API_URL);
+            let payload = json!({
+                "row": row,
+                "column": column,
+                "candidateId": self.candidate_id
+            });
 
-        let response = self.client.delete(&url).json(&payload).send().await?;
+            let response = self.client.delete(&url).json(&payload).send().await;
 
-        if response.status().is_success() {
-            println!("Successfully deleted Polyanet at ({}, {})", row, column);
-        } else {
-            eprintln!(
-                "Failed to delete Polyanet at ({}, {}): {}",
-                row,
-                column,
-                response.text().await?
-            );
+            match response {
+                Ok(resp) if resp.status().is_success() => {
+                    println!("Successfully deleted Polyanet at ({}, {})", row, column);
+                    return Ok(());
+                }
+                Ok(resp) => {
+                    let error_message = resp
+                        .text()
+                        .await
+                        .unwrap_or_else(|_| "Unknown error".to_string());
+                    eprintln!(
+                        "Failed to delete Polyanet at ({}, {}): {}. Retrying...",
+                        row, column, error_message
+                    );
+                }
+                Err(e) => {
+                    eprintln!(
+                        "Error deleting Polyanet at ({}, {}): {}. Retrying...",
+                        row, column, e
+                    );
+                }
+            }
+
+            sleep(Duration::from_secs(1)).await; // Wait before retrying
         }
-        Ok(())
     }
 }
