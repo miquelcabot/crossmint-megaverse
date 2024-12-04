@@ -43,22 +43,9 @@ impl MegaverseApiClient {
 
         for (row_index, row) in goal_map.iter().enumerate() {
             for (col_index, cell) in row.iter().enumerate() {
-                match cell {
-                    ObjectType::Polyanet => {
-                        self.create_object(row_index as u32, col_index as u32, cell)
-                            .await?;
-                    }
-                    ObjectType::Soloon(Some(_)) => {
-                        self.create_object(row_index as u32, col_index as u32, cell)
-                            .await?;
-                    }
-                    ObjectType::Cometh(Some(_)) => {
-                        self.create_object(row_index as u32, col_index as u32, cell)
-                            .await?;
-                    }
-                    _ => {
-                        // Skip Space or invalid objects
-                    }
+                if !matches!(cell, ObjectType::Space) {
+                    self.create_object(row_index as u32, col_index as u32, cell)
+                        .await?;
                 }
             }
         }
