@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(Debug)]
 pub enum ObjectType {
     Polyanet,
@@ -12,5 +14,17 @@ impl ObjectType {
             ObjectType::Soloon => "soloons",
             ObjectType::Cometh => "comeths",
         }
+    }
+}
+
+// Implement the Display trait for ObjectType
+impl fmt::Display for ObjectType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let name = match self {
+            ObjectType::Polyanet => "Polyanet",
+            ObjectType::Soloon => "Soloon",
+            ObjectType::Cometh => "Cometh",
+        };
+        write!(f, "{}", name)
     }
 }

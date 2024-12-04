@@ -152,7 +152,7 @@ impl MegaverseApiClient {
             match response {
                 Ok(resp) if resp.status().is_success() => {
                     println!(
-                        "Successfully deleted {:?} at ({}, {})",
+                        "Successfully deleted {} at ({}, {})",
                         object_type, row, column
                     );
                     return Ok(());
@@ -163,13 +163,13 @@ impl MegaverseApiClient {
                         .await
                         .unwrap_or_else(|_| "Unknown error".to_string());
                     eprintln!(
-                        "Failed to delete {:?} at ({}, {}): {}. Retrying...",
+                        "Failed to delete {} at ({}, {}): {}. Retrying...",
                         object_type, row, column, error_message
                     );
                 }
                 Err(e) => {
                     eprintln!(
-                        "Error deleting {:?} at ({}, {}): {}. Retrying...",
+                        "Error deleting {} at ({}, {}): {}. Retrying...",
                         object_type, row, column, e
                     );
                 }
