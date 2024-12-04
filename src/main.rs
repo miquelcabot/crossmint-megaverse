@@ -1,15 +1,32 @@
 use dialoguer::{theme::ColorfulTheme, Input, Select};
+use dotenv::dotenv;
 use figlet_rs::FIGfont;
 use megaverse::MegaverseApiClient;
+use std::env;
 
 #[tokio::main]
 async fn main() {
+    // Load environment variables from .env file
+    dotenv().ok();
+
+    // Get candidate_id from environment variables
+    let candidate_id = match env::var("CANDIDATE_ID") {
+        Ok(id) => id,
+        Err(_) => {
+            eprintln!("Error: CANDIDATE_ID is not set in the .env file");
+            std::process::exit(1);
+        }
+    };
+
     // Generate ASCII art
     let standard_font = FIGfont::standard().unwrap();
     let figure = standard_font
         .convert("Megaverse")
         .expect("Failed to generate ASCII art");
     println!("{}", figure);
+
+    // Create a MegaverseApiClient instance
+    let client = MegaverseApiClient::new(&candidate_id);
 
     // Menu options
     let options = vec!["Do a 🪐POLYanet cross", "Reset Megaverse", "Exit"];
@@ -22,9 +39,6 @@ async fn main() {
             .default(0)
             .interact()
             .unwrap();
-
-        // Create a MegaverseApiClient instance
-        let client = MegaverseApiClient::new("your_candidate_id_here");
 
         match selection {
             0 => todo!("Do a 🪐POLYanet cross"),
