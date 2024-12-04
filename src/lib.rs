@@ -68,7 +68,7 @@ impl MegaverseApiClient {
     }
 
     /// Fetch the goal map from the API and parse it into a 2D Vec of ObjectType
-    pub async fn fetch_goal_map(&self) -> Result<Vec<Vec<ObjectType>>, Box<dyn std::error::Error>> {
+    async fn fetch_goal_map(&self) -> Result<Vec<Vec<ObjectType>>, Box<dyn std::error::Error>> {
         let url = format!("{}/map/{}/goal", API_URL, self.candidate_id);
         let response = self.client.get(&url).send().await?;
 
@@ -119,7 +119,7 @@ impl MegaverseApiClient {
     }
 
     /// Create an object (Polyanet, Soloon, or Cometh) at the specified row and column
-    pub async fn create_object(
+    async fn create_object(
         &self,
         row: u32,
         column: u32,
