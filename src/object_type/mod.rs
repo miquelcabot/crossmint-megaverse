@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 #[derive(Debug)]
 pub enum ObjectType {
     Polyanet,
@@ -13,19 +11,6 @@ impl ObjectType {
             ObjectType::Polyanet => "polyanets",
             ObjectType::Soloon => "soloons",
             ObjectType::Cometh => "comeths",
-        }
-    }
-}
-
-impl FromStr for ObjectType {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.to_uppercase().as_str() {
-            "POLYANET" => Ok(ObjectType::Polyanet),
-            "SOLOON" => Ok(ObjectType::Soloon),
-            "COMETH" => Ok(ObjectType::Cometh),
-            _ => Err(format!("Invalid object type: {}", s)),
         }
     }
 }

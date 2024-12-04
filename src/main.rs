@@ -3,7 +3,6 @@ use dotenv::dotenv;
 use figlet_rs::FIGfont;
 use megaverse::{MegaverseApiClient, ObjectType};
 use std::env;
-use std::str::FromStr;
 
 #[tokio::main]
 async fn main() {
@@ -61,19 +60,23 @@ async fn main() {
                     .interact_text()
                     .unwrap();
 
-                let object_type_input: String = Input::with_theme(&ColorfulTheme::default())
-                    .with_prompt("Enter the object type (POLYANET, SOLOON, COMETH)")
-                    .interact_text()
+                // Select the object type from a menu
+                let object_types = vec!["Polyanet", "Soloon", "Cometh"];
+                let object_selection = Select::with_theme(&ColorfulTheme::default())
+                    .with_prompt("Select the object type:")
+                    .items(&object_types)
+                    .default(0)
+                    .interact()
                     .unwrap();
 
-                match ObjectType::from_str(&object_type_input) {
-                    Ok(object_type) => {
-                        client.delete_object(row, col, object_type).await.unwrap();
-                    }
-                    Err(e) => {
-                        eprintln!("{}", e);
-                    }
-                }
+                let object_type = match object_selection {
+                    0 => ObjectType::Polyanet,
+                    1 => ObjectType::Soloon,
+                    2 => ObjectType::Cometh,
+                    _ => unreachable!(),
+                };
+
+                client.delete_object(row, col, object_type).await.unwrap();
             }
             3 => {
                 println!("Exiting...");
