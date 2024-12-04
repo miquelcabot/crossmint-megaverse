@@ -22,49 +22,30 @@ impl MegaverseApiClient {
 
     /// Fetch and display the goal map
     pub async fn show_goal_map(&self) -> Result<(), Box<dyn std::error::Error>> {
-        let url = format!("{}/map/{}/goal", API_URL, self.candidate_id);
-        let response = self.client.get(&url).send().await?;
-
-        if response.status().is_success() {
-            let goal_map: Value = response.json().await?;
-            // Extract the "goal" field, which is a 2D array
-            if let Some(map) = goal_map.get("goal").and_then(|v| v.as_array()) {
-                for row in map {
-                    if let Some(cells) = row.as_array() {
-                        let line: Vec<String> = cells
-                            .iter()
-                            .map(|cell| {
-                                // Format each cell to be 8 characters wide
-                                format!("{:<8}", cell.as_str().unwrap_or("UNKNOWN"))
-                            })
-                            .collect();
-                        println!("{}", line.join(" "));
-                    }
-                }
-            } else {
-                println!("Failed to parse goal map: {:?}", goal_map);
-            }
-        } else {
-            eprintln!(
-                "Failed to fetch goal map: {}",
-                response
-                    .text()
-                    .await
-                    .unwrap_or_else(|_| "Unknown error".to_string())
-            );
+        let goal_map = self.fetch_goal_map().await?;
+        for row in goal_map {
+            let line: Vec<String> = row
+                .iter()
+                .map(|cell| format!("{:<8}", cell)) // Format each cell to 8 characters
+                .collect();
+            println!("{}", line.join(" "));
         }
         Ok(())
     }
 
-    /// Create a Polyanet cross in the Megaverse
+    /// Create Polyanets in positions defined by the goal map
     pub async fn create_polyanet_cross(&self) -> Result<(), Box<dyn std::error::Error>> {
-        for i in 0..11 {
-            // Diagonal principal
-            self.create_polyanet(i, i).await?;
-            // Diagonal secundària
-            self.create_polyanet(i, 10 - i).await?;
+        let goal_map = self.fetch_goal_map().await?;
+        for (row_index, row) in goal_map.iter().enumerate() {
+            for (col_index, cell) in row.iter().enumerate() {
+                if cell == "POLYANET" {
+                    // Create a POLYANET at this position
+                    self.create_polyanet(row_index as u32, col_index as u32)
+                        .await?;
+                }
+            }
         }
-        println!("Polyanet cross created successfully!");
+        println!("Polyanets created successfully based on the goal map!");
         Ok(())
     }
 
@@ -77,6 +58,41 @@ impl MegaverseApiClient {
         }
         println!("Megaverse reset successfully!");
         Ok(())
+    }
+
+    /// Fetch the goal map from the API
+    async fn fetch_goal_map(&self) -> Result<Vec<Vec<String>>, Box<dyn std::error::Error>> {
+        let url = format!("{}/map/{}/goal", API_URL, self.candidate_id);
+        let response = self.client.get(&url).send().await?;
+
+        if response.status().is_success() {
+            let goal_map: Value = response.json().await?;
+            if let Some(map) = goal_map.get("goal").and_then(|v| v.as_array()) {
+                // Convert the JSON 2D array into a Vec<Vec<String>>
+                let parsed_map = map
+                    .iter()
+                    .map(|row| {
+                        row.as_array()
+                            .unwrap_or(&vec![])
+                            .iter()
+                            .map(|cell| cell.as_str().unwrap_or("UNKNOWN").to_string())
+                            .collect()
+                    })
+                    .collect();
+                Ok(parsed_map)
+            } else {
+                Err("Failed to parse the goal map field".into())
+            }
+        } else {
+            Err(format!(
+                "Failed to fetch goal map: {}",
+                response
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "Unknown error".to_string())
+            )
+            .into())
+        }
     }
 
     /// Create a Polyanet at the specified row and column
