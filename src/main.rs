@@ -1,5 +1,6 @@
 use dialoguer::{theme::ColorfulTheme, Input, Select};
 use figlet_rs::FIGfont;
+use megaverse::MegaverseApiClient;
 
 #[tokio::main]
 async fn main() {
@@ -21,6 +22,9 @@ async fn main() {
             .default(0)
             .interact()
             .unwrap();
+
+        // Create a MegaverseApiClient instance
+        let client = MegaverseApiClient::new("your_candidate_id_here");
 
         match selection {
             0 => todo!("Do a 🪐POLYanet cross"),
