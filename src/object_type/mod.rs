@@ -67,15 +67,21 @@ impl ObjectType {
 impl fmt::Display for ObjectType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ObjectType::Space => write!(f, "Space"),
-            ObjectType::Polyanet => write!(f, "Polyanet"),
+            ObjectType::Space => write!(f, "🌌"),    // Space icon
+            ObjectType::Polyanet => write!(f, "🪐"), // Polyanet icon
             ObjectType::Soloon(color) => match color {
-                Some(c) => write!(f, "Soloon ({})", c),
-                None => write!(f, "Soloon"),
+                Some(Color::Blue) => write!(f, "🔵"),   // Blue Soloon icon
+                Some(Color::Red) => write!(f, "🔴"),    // Red Soloon icon
+                Some(Color::Purple) => write!(f, "🟣"), // Purple Soloon icon
+                Some(Color::White) => write!(f, "⚪"),  // White Soloon icon
+                None => write!(f, "🌕"),                // Generic Soloon icon
             },
             ObjectType::Cometh(direction) => match direction {
-                Some(d) => write!(f, "Cometh ({})", d),
-                None => write!(f, "Cometh"),
+                Some(Direction::Up) => write!(f, "☄️↑"),    // Cometh up icon
+                Some(Direction::Down) => write!(f, "☄️↓"),  // Cometh down icon
+                Some(Direction::Left) => write!(f, "☄️←"),  // Cometh left icon
+                Some(Direction::Right) => write!(f, "☄️→"), // Cometh right icon
+                None => write!(f, "☄️"),                    // Generic Cometh icon
             },
         }
     }
