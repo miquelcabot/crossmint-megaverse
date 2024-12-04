@@ -1,8 +1,9 @@
-use dialoguer::{theme::ColorfulTheme, Select};
+use dialoguer::{theme::ColorfulTheme, Input, Select};
 use dotenv::dotenv;
 use figlet_rs::FIGfont;
-use megaverse::MegaverseApiClient;
+use megaverse::{MegaverseApiClient, ObjectType};
 use std::env;
+use std::str::FromStr;
 
 #[tokio::main]
 async fn main() {
@@ -32,7 +33,7 @@ async fn main() {
     let options = vec![
         "Show goal map",
         "Do a 🪐POLYanet cross",
-        "Reset Megaverse",
+        "Delete object at specific position",
         "Exit",
     ];
 
@@ -48,7 +49,32 @@ async fn main() {
         match selection {
             0 => client.show_goal_map().await.unwrap(),
             1 => client.create_polyanet_cross().await.unwrap(),
-            2 => client.reset_megaverse().await.unwrap(),
+            2 => {
+                // Get input for row, column, and type of object
+                let row: u32 = Input::with_theme(&ColorfulTheme::default())
+                    .with_prompt("Enter the row")
+                    .interact_text()
+                    .unwrap();
+
+                let col: u32 = Input::with_theme(&ColorfulTheme::default())
+                    .with_prompt("Enter the column")
+                    .interact_text()
+                    .unwrap();
+
+                let object_type_input: String = Input::with_theme(&ColorfulTheme::default())
+                    .with_prompt("Enter the object type (POLYANET, SOLOON, COMETH)")
+                    .interact_text()
+                    .unwrap();
+
+                match ObjectType::from_str(&object_type_input) {
+                    Ok(object_type) => {
+                        client.delete_object(row, col, object_type).await.unwrap();
+                    }
+                    Err(e) => {
+                        eprintln!("{}", e);
+                    }
+                }
+            }
             3 => {
                 println!("Exiting...");
                 break; // Exit the loop if "Exit" is selected

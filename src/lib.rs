@@ -1,10 +1,13 @@
+mod object_type;
+
 use reqwest::Client;
 use serde_json::json;
 use serde_json::Value; // For parsing dynamic JSON
 use tokio::time::{sleep, Duration};
 
+pub use object_type::ObjectType;
+
 const API_URL: &str = "https://challenge.crossmint.com/api";
-const MEGAVERSE_SIZE: u32 = 11;
 
 #[derive(Debug)]
 pub struct MegaverseApiClient {
@@ -47,17 +50,6 @@ impl MegaverseApiClient {
             }
         }
         println!("Polyanets created successfully based on the goal map!");
-        Ok(())
-    }
-
-    /// Reset the Megaverse by deleting all Polyanets
-    pub async fn reset_megaverse(&self) -> Result<(), Box<dyn std::error::Error>> {
-        for row in 0..MEGAVERSE_SIZE {
-            for column in 0..MEGAVERSE_SIZE {
-                self.delete_polyanet(row, column).await?;
-            }
-        }
-        println!("Megaverse reset successfully!");
         Ok(())
     }
 
@@ -139,14 +131,16 @@ impl MegaverseApiClient {
         }
     }
 
-    /// Delete a Polyanet at the specified row and column
-    pub async fn delete_polyanet(
+    /// Delete an object (Polyanet, Soloon, or Cometh) at the specified row and column
+    pub async fn delete_object(
         &self,
         row: u32,
         column: u32,
+        object_type: ObjectType,
     ) -> Result<(), Box<dyn std::error::Error>> {
+        let url = format!("{}/{}", API_URL, object_type.as_url_segment());
+
         loop {
-            let url = format!("{}/polyanets", API_URL);
             let payload = json!({
                 "row": row,
                 "column": column,
@@ -157,7 +151,10 @@ impl MegaverseApiClient {
 
             match response {
                 Ok(resp) if resp.status().is_success() => {
-                    println!("Successfully deleted Polyanet at ({}, {})", row, column);
+                    println!(
+                        "Successfully deleted {:?} at ({}, {})",
+                        object_type, row, column
+                    );
                     return Ok(());
                 }
                 Ok(resp) => {
@@ -166,14 +163,14 @@ impl MegaverseApiClient {
                         .await
                         .unwrap_or_else(|_| "Unknown error".to_string());
                     eprintln!(
-                        "Failed to delete Polyanet at ({}, {}): {}. Retrying...",
-                        row, column, error_message
+                        "Failed to delete {:?} at ({}, {}): {}. Retrying...",
+                        object_type, row, column, error_message
                     );
                 }
                 Err(e) => {
                     eprintln!(
-                        "Error deleting Polyanet at ({}, {}): {}. Retrying...",
-                        row, column, e
+                        "Error deleting {:?} at ({}, {}): {}. Retrying...",
+                        object_type, row, column, e
                     );
                 }
             }
