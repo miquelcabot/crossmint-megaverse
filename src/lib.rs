@@ -37,19 +37,33 @@ impl MegaverseApiClient {
         Ok(())
     }
 
-    /// Create Polyanets in positions defined by the goal map
-    pub async fn create_polyanet_cross(&self) -> Result<(), Box<dyn std::error::Error>> {
+    /// Create the map based on the goal map
+    pub async fn create_map(&self) -> Result<(), Box<dyn std::error::Error>> {
         let goal_map = self.fetch_goal_map().await?;
+
         for (row_index, row) in goal_map.iter().enumerate() {
             for (col_index, cell) in row.iter().enumerate() {
-                if let ObjectType::Polyanet = cell {
-                    // Create a POLYANET at this position
-                    self.create_polyanet(row_index as u32, col_index as u32)
-                        .await?;
+                match cell {
+                    ObjectType::Polyanet => {
+                        self.create_object(row_index as u32, col_index as u32, cell)
+                            .await?;
+                    }
+                    ObjectType::Soloon(Some(_)) => {
+                        self.create_object(row_index as u32, col_index as u32, cell)
+                            .await?;
+                    }
+                    ObjectType::Cometh(Some(_)) => {
+                        self.create_object(row_index as u32, col_index as u32, cell)
+                            .await?;
+                    }
+                    _ => {
+                        // Skip Space or invalid objects
+                    }
                 }
             }
         }
-        println!("Polyanets created successfully based on the goal map!");
+
+        println!("Map created successfully based on the goal map!");
         Ok(())
     }
 
@@ -104,25 +118,48 @@ impl MegaverseApiClient {
         }
     }
 
-    /// Create a Polyanet at the specified row and column
-    pub async fn create_polyanet(
+    /// Create an object (Polyanet, Soloon, or Cometh) at the specified row and column
+    pub async fn create_object(
         &self,
         row: u32,
         column: u32,
+        object_type: &ObjectType,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        loop {
-            let url = format!("{}/polyanets", API_URL);
-            let payload = json!({
+        let url = match object_type.as_url_segment() {
+            Ok(segment) => format!("{}/{}", API_URL, segment),
+            Err(e) => return Err(e.into()),
+        };
+
+        let payload = match object_type {
+            ObjectType::Polyanet => json!({
                 "row": row,
                 "column": column,
                 "candidateId": self.candidate_id
-            });
+            }),
+            ObjectType::Soloon(Some(color)) => json!({
+                "row": row,
+                "column": column,
+                "candidateId": self.candidate_id,
+                "color": format!("{}", color).to_lowercase()
+            }),
+            ObjectType::Cometh(Some(direction)) => json!({
+                "row": row,
+                "column": column,
+                "candidateId": self.candidate_id,
+                "direction": format!("{}", direction).to_lowercase()
+            }),
+            _ => return Err("Invalid object type for creation.".into()),
+        };
 
+        loop {
             let response = self.client.post(&url).json(&payload).send().await;
 
             match response {
                 Ok(resp) if resp.status().is_success() => {
-                    println!("Successfully created Polyanet at ({}, {})", row, column);
+                    println!(
+                        "Successfully created {} at ({}, {})",
+                        object_type, row, column
+                    );
                     return Ok(());
                 }
                 Ok(resp) => {
@@ -131,14 +168,14 @@ impl MegaverseApiClient {
                         .await
                         .unwrap_or_else(|_| "Unknown error".to_string());
                     eprintln!(
-                        "Failed to create Polyanet at ({}, {}): {}. Retrying...",
-                        row, column, error_message
+                        "Failed to create {} at ({}, {}): {}. Retrying...",
+                        object_type, row, column, error_message
                     );
                 }
                 Err(e) => {
                     eprintln!(
-                        "Error creating Polyanet at ({}, {}): {}. Retrying...",
-                        row, column, e
+                        "Error creating {} at ({}, {}): {}. Retrying...",
+                        object_type, row, column, e
                     );
                 }
             }

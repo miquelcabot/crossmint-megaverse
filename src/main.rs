@@ -31,7 +31,7 @@ async fn main() {
     // Menu options
     let options = vec![
         "Show goal map",
-        "Do a 🪐POLYanet cross",
+        "Create map based on goal map",
         "Delete object at specific position",
         "Exit",
     ];
@@ -47,7 +47,7 @@ async fn main() {
 
         match selection {
             0 => client.show_goal_map().await.unwrap(),
-            1 => client.create_polyanet_cross().await.unwrap(),
+            1 => client.create_map().await.unwrap(),
             2 => {
                 // Get input for row, column, and type of object
                 let row: u32 = Input::with_theme(&ColorfulTheme::default())
