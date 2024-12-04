@@ -9,6 +9,7 @@ pub enum Color {
     White,
 }
 
+/// Implement Display for Color
 impl fmt::Display for Color {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let color_name = match self {
@@ -30,6 +31,7 @@ pub enum Direction {
     Right,
 }
 
+/// Implement Display for Direction
 impl fmt::Display for Direction {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let direction_name = match self {
