@@ -1,5 +1,6 @@
 use reqwest::Client;
 use serde_json::json;
+use serde_json::Value; // For parsing dynamic JSON
 
 const API_URL: &str = "https://challenge.crossmint.com/api";
 const MEGAVERSE_SIZE: u32 = 11;
@@ -17,6 +18,42 @@ impl MegaverseApiClient {
             client: Client::new(),
             candidate_id: candidate_id.to_string(),
         }
+    }
+
+    /// Fetch and display the goal map
+    pub async fn show_goal_map(&self) -> Result<(), Box<dyn std::error::Error>> {
+        let url = format!("{}/map/{}/goal", API_URL, self.candidate_id);
+        let response = self.client.get(&url).send().await?;
+
+        if response.status().is_success() {
+            let goal_map: Value = response.json().await?;
+            // Extract the "goal" field, which is a 2D array
+            if let Some(map) = goal_map.get("goal").and_then(|v| v.as_array()) {
+                for row in map {
+                    if let Some(cells) = row.as_array() {
+                        let line: Vec<String> = cells
+                            .iter()
+                            .map(|cell| {
+                                // Format each cell to be 8 characters wide
+                                format!("{:<8}", cell.as_str().unwrap_or("UNKNOWN"))
+                            })
+                            .collect();
+                        println!("{}", line.join(" "));
+                    }
+                }
+            } else {
+                println!("Failed to parse goal map: {:?}", goal_map);
+            }
+        } else {
+            eprintln!(
+                "Failed to fetch goal map: {}",
+                response
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "Unknown error".to_string())
+            );
+        }
+        Ok(())
     }
 
     /// Create a Polyanet cross in the Megaverse

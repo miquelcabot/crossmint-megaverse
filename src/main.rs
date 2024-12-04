@@ -29,7 +29,12 @@ async fn main() {
     let client = MegaverseApiClient::new(&candidate_id);
 
     // Menu options
-    let options = vec!["Do a 🪐POLYanet cross", "Reset Megaverse", "Exit"];
+    let options = vec![
+        "Show goal map",
+        "Do a 🪐POLYanet cross",
+        "Reset Megaverse",
+        "Exit",
+    ];
 
     // Loop to keep the menu active until "Exit" is selected
     loop {
@@ -41,9 +46,10 @@ async fn main() {
             .unwrap();
 
         match selection {
-            0 => client.create_polyanet_cross().await.unwrap(),
-            1 => client.reset_megaverse().await.unwrap(),
-            2 => {
+            0 => client.show_goal_map().await.unwrap(),
+            1 => client.create_polyanet_cross().await.unwrap(),
+            2 => client.reset_megaverse().await.unwrap(),
+            3 => {
                 println!("Exiting...");
                 break; // Exit the loop if "Exit" is selected
             }
