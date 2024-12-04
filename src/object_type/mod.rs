@@ -45,6 +45,7 @@ impl fmt::Display for Direction {
 /// Enum for Object Types in the Megaverse
 #[derive(Debug)]
 pub enum ObjectType {
+    Space,
     Polyanet,
     Soloon(Option<Color>),
     Cometh(Option<Direction>),
@@ -52,11 +53,12 @@ pub enum ObjectType {
 
 impl ObjectType {
     /// Returns the URL segment for the object type
-    pub fn as_url_segment(&self) -> &str {
+    pub fn as_url_segment(&self) -> Result<&str, &'static str> {
         match self {
-            ObjectType::Polyanet => "polyanets",
-            ObjectType::Soloon(_) => "soloons",
-            ObjectType::Cometh(_) => "comeths",
+            ObjectType::Space => Err("Space objects do not have a URL segment."),
+            ObjectType::Polyanet => Ok("polyanets"),
+            ObjectType::Soloon(_) => Ok("soloons"),
+            ObjectType::Cometh(_) => Ok("comeths"),
         }
     }
 }
@@ -65,6 +67,7 @@ impl ObjectType {
 impl fmt::Display for ObjectType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            ObjectType::Space => write!(f, "Space"),
             ObjectType::Polyanet => write!(f, "Polyanet"),
             ObjectType::Soloon(color) => match color {
                 Some(c) => write!(f, "Soloon ({})", c),

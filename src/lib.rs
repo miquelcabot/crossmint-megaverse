@@ -5,7 +5,7 @@ use serde_json::json;
 use serde_json::Value; // For parsing dynamic JSON
 use tokio::time::{sleep, Duration};
 
-pub use object_type::ObjectType;
+pub use object_type::{Color, Direction, ObjectType};
 
 const API_URL: &str = "https://challenge.crossmint.com/api";
 
@@ -30,7 +30,7 @@ impl MegaverseApiClient {
         for row in goal_map {
             let line: Vec<String> = row
                 .iter()
-                .map(|cell| format!("{:<8}", cell)) // Format each cell to 8 characters
+                .map(|cell| format!("{}", cell)) // Format each cell with Display implementation
                 .collect();
             println!("{}", line.join(" "));
         }
@@ -42,7 +42,7 @@ impl MegaverseApiClient {
         let goal_map = self.fetch_goal_map().await?;
         for (row_index, row) in goal_map.iter().enumerate() {
             for (col_index, cell) in row.iter().enumerate() {
-                if cell == "POLYANET" {
+                if let ObjectType::Polyanet = cell {
                     // Create a POLYANET at this position
                     self.create_polyanet(row_index as u32, col_index as u32)
                         .await?;
@@ -53,22 +53,21 @@ impl MegaverseApiClient {
         Ok(())
     }
 
-    /// Fetch the goal map from the API
-    async fn fetch_goal_map(&self) -> Result<Vec<Vec<String>>, Box<dyn std::error::Error>> {
+    /// Fetch the goal map from the API and parse it into a 2D Vec of ObjectType
+    pub async fn fetch_goal_map(&self) -> Result<Vec<Vec<ObjectType>>, Box<dyn std::error::Error>> {
         let url = format!("{}/map/{}/goal", API_URL, self.candidate_id);
         let response = self.client.get(&url).send().await?;
 
         if response.status().is_success() {
             let goal_map: Value = response.json().await?;
             if let Some(map) = goal_map.get("goal").and_then(|v| v.as_array()) {
-                // Convert the JSON 2D array into a Vec<Vec<String>>
                 let parsed_map = map
                     .iter()
                     .map(|row| {
                         row.as_array()
                             .unwrap_or(&vec![])
                             .iter()
-                            .map(|cell| cell.as_str().unwrap_or("UNKNOWN").to_string())
+                            .map(|cell| Self::parse_cell(cell.as_str().unwrap_or("SPACE")))
                             .collect()
                     })
                     .collect();
@@ -85,6 +84,23 @@ impl MegaverseApiClient {
                     .unwrap_or_else(|_| "Unknown error".to_string())
             )
             .into())
+        }
+    }
+
+    /// Parse a single cell from the goal map into an ObjectType
+    fn parse_cell(cell: &str) -> ObjectType {
+        match cell {
+            "POLYANET" => ObjectType::Polyanet,
+            "BLUE_SOLOON" => ObjectType::Soloon(Some(Color::Blue)),
+            "RED_SOLOON" => ObjectType::Soloon(Some(Color::Red)),
+            "PURPLE_SOLOON" => ObjectType::Soloon(Some(Color::Purple)),
+            "WHITE_SOLOON" => ObjectType::Soloon(Some(Color::White)),
+            "UP_COMETH" => ObjectType::Cometh(Some(Direction::Up)),
+            "DOWN_COMETH" => ObjectType::Cometh(Some(Direction::Down)),
+            "LEFT_COMETH" => ObjectType::Cometh(Some(Direction::Left)),
+            "RIGHT_COMETH" => ObjectType::Cometh(Some(Direction::Right)),
+            "SPACE" => ObjectType::Space,
+            _ => ObjectType::Space,
         }
     }
 
@@ -138,7 +154,10 @@ impl MegaverseApiClient {
         column: u32,
         object_type: ObjectType,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let url = format!("{}/{}", API_URL, object_type.as_url_segment());
+        let url = match object_type.as_url_segment() {
+            Ok(segment) => format!("{}/{}", API_URL, segment),
+            Err(e) => return Err(e.into()),
+        };
 
         loop {
             let payload = json!({
