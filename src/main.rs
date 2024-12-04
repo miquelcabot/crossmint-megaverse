@@ -71,8 +71,8 @@ async fn main() {
 
                 let object_type = match object_selection {
                     0 => ObjectType::Polyanet,
-                    1 => ObjectType::Soloon,
-                    2 => ObjectType::Cometh,
+                    1 => ObjectType::Soloon(None),
+                    2 => ObjectType::Cometh(None),
                     _ => unreachable!(),
                 };
 
